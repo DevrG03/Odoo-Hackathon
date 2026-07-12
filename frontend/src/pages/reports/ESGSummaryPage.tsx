@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import {
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend
+} from 'recharts'
 import { Layout } from '../../components/layout/Layout'
 import { Button } from '../../components/ui/Button'
 import { Table, type Column } from '../../components/ui/Table'
@@ -115,6 +119,23 @@ export function ESGSummaryPage() {
     },
   ]
 
+  const avgEnv = scores.length ? (scores.reduce((sum, s) => sum + s.environmental_score, 0) / scores.length) : 0
+  const avgSoc = scores.length ? (scores.reduce((sum, s) => sum + s.social_score, 0) / scores.length) : 0
+  const avgGov = scores.length ? (scores.reduce((sum, s) => sum + s.governance_score, 0) / scores.length) : 0
+
+  const radarData = [
+    { subject: 'Environmental', value: avgEnv, fullMark: 100 },
+    { subject: 'Social', value: avgSoc, fullMark: 100 },
+    { subject: 'Governance', value: avgGov, fullMark: 100 },
+  ]
+
+  const resolvedIssuesCount = Math.max(0, govData.total_compliance_issues - govData.compliance_issues_summary.open - govData.compliance_issues_summary.overdue)
+  const pieData = [
+    { name: 'Open', value: govData.compliance_issues_summary.open, color: '#f59e0b' },
+    { name: 'Overdue', value: govData.compliance_issues_summary.overdue, color: '#ef4444' },
+    { name: 'Resolved', value: resolvedIssuesCount, color: '#10b981' }
+  ].filter(item => item.value > 0)
+
   return (
     <Layout title="ESG Summary Report">
       {/* Date Range Filter Bar */}
@@ -227,6 +248,59 @@ export function ESGSummaryPage() {
                 {govData.compliance_issues_summary.overdue}
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Visual Charts Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Radar Chart: ESG Scores Averages */}
+        <div className="card flex flex-col items-center">
+          <h3 className="text-[14px] font-semibold text-charcoal mb-4 w-full">ESG Performance Distribution</h3>
+          <div className="h-[220px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                <PolarGrid stroke="#E6F2DD" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: '#2D3A35', fontSize: 11 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#2D3A35', fontSize: 9 }} />
+                <Radar name="Averages" dataKey="value" stroke="#659287" fill="#88BDA4" fillOpacity={0.6} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#2D3A35', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '11px' }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Pie Chart: Compliance Issues Breakdown */}
+        <div className="card flex flex-col items-center">
+          <h3 className="text-[14px] font-semibold text-charcoal mb-4 w-full">Compliance Issues Breakdown</h3>
+          <div className="h-[220px] w-full">
+            {pieData.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-sage text-[12px]">No compliance issues recorded</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#2D3A35', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '11px' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>

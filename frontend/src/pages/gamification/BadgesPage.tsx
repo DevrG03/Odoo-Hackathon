@@ -8,6 +8,31 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { gamificationApi } from '../../api/gamification'
 import type { Badge } from '../../types/gamification'
 
+function renderBadgeIcon(iconStr: string) {
+  if (!iconStr) return <span className="ti ti-award text-forest" />
+  
+  if (iconStr.startsWith('icon-')) {
+    const parts = iconStr.split('-')
+    const iconName = parts[1] || 'award'
+    const colorName = parts[2] || ''
+
+    let tiClass = `ti-${iconName}`
+    if (iconName === 'lightning') tiClass = 'ti-bolt'
+    if (iconName === 'globe') tiClass = 'ti-world'
+    if (iconName === 'handshake') tiClass = 'ti-heart-handshake'
+
+    let colorClass = 'text-forest'
+    if (colorName === 'green') colorClass = 'text-emerald-600'
+    else if (colorName === 'gold') colorClass = 'text-amber-500'
+    else if (colorName === 'blue') colorClass = 'text-blue-500'
+    else if (colorName === 'red') colorClass = 'text-red-500'
+
+    return <span className={`ti ${tiClass} ${colorClass}`} />
+  }
+
+  return <span>{iconStr}</span>
+}
+
 export function BadgesPage() {
   const qc = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
@@ -127,7 +152,9 @@ export function BadgesPage() {
             <div key={badge.id} className="card flex flex-col items-center justify-between text-center">
               <div className="flex flex-col items-center">
                 {/* Large Text Icon */}
-                <div className="text-[44px] mb-3 select-none filter drop-shadow">{badge.icon}</div>
+                <div className="text-[44px] mb-3 select-none filter drop-shadow flex items-center justify-center h-12">
+                  {renderBadgeIcon(badge.icon)}
+                </div>
                 <h3 className="font-semibold text-[14px] text-charcoal mb-1">{badge.name}</h3>
                 <p className="text-sage text-[12.5px] max-w-xs mb-3">{badge.description}</p>
                 <div className="mt-2">
