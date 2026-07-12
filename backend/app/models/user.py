@@ -35,4 +35,4 @@ class Employee(Base):
     
     # Relationships mapping back to core platform data
     user = relationship("User", back_populates="employee_profile")
-    department = relationship("Department", back_populates="employees")
+    department = relationship("Department", back_populates="employees", foreign_keys=[department_id])

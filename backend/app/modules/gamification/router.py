@@ -5,6 +5,7 @@ from app.database import get_db
 from app.models.gamification import Challenge, ChallengeParticipation, Badge, Reward
 from app.models.user import Employee
 from app.models.platform import ESGConfig
+from app.models.notification import Notification
 from app.schemas.gamification import (
     ChallengeCreate, ChallengeUpdate, ChallengeRead,
     ChallengeParticipationCreate, ChallengeParticipationApprove, ChallengeParticipationRead,
@@ -43,8 +44,16 @@ def _check_and_award_badges(employee: Employee, db: Session):
         rule = rule.replace("points", str(employee.total_points))
         try:
             if eval(rule):  # noqa: S307
-                # In production replace eval with a proper rule parser
+                # NOTE: In production, replace eval() with a safe expression parser.
                 pass  # TODO: insert into an EmployeeBadge join table when you add that model
+                
+                # Notification Logic: Alert the employee of their new achievement
+                notif = Notification(
+                    employee_id=employee.id,
+                    title="New Badge Unlocked",
+                    message=f"Congratulations! You unlocked the '{badge.name}' badge."
+                )
+                db.add(notif)
         except Exception:
             pass
 
@@ -183,6 +192,14 @@ def approve_challenge_participation(
                 employee.total_xp += challenge.xp_reward
                 # Business Rule: Badge Auto-Award
                 _check_and_award_badges(employee, db)
+
+    # Notification Logic: Notify the employee of the validation result
+    notif = Notification(
+        employee_id=p.employee_id,
+        title=f"Challenge Participation {approval_in.approval_status}",
+        message=f"Your challenge submission has been {approval_in.approval_status.lower()}."
+    )
+    db.add(notif)
 
     db.commit()
     db.refresh(p)
