@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+# trigger reload
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.modules.auth.router import router as auth_router
