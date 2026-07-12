@@ -11,6 +11,10 @@ from app.schemas.platform import (
 )
 from app.models.notification import Notification
 from app.schemas.notification import NotificationRead
+from datetime import datetime
+import csv
+from io import StringIO
+from fastapi import Response
 
 router = APIRouter()
 
@@ -220,3 +224,140 @@ def mark_notification_read(notification_id: int, db: Session = Depends(get_db)):
         notif.is_read = True
         db.commit()
     return {"status": "success"}
+# ---The ESG Summary Report (Custom Report Builder)---
+
+@router.get("/reports/esg-summary")
+def esg_summary_report(
+    department_id: Optional[int] = None,
+    employee_id: Optional[int] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    export_format: Optional[str] = "json",
+    db: Session = Depends(get_db),
+):
+    """
+    The Custom Report Builder endpoint.
+    
+    This function aggregates data across the Environmental, Social, and Governance 
+    domains to produce a single, unified summary report. It supports dynamic filtering 
+    by department, employee, and date ranges.
+    
+    If the 'export_format' parameter is set to 'csv', the function bypasses the JSON 
+    response and instead streams a raw text/csv file directly to the client.
+    """
+    
+    """
+    Section 1: Environmental Data
+    Fetches carbon transactions and calculates the sum of all emissions 
+    (in kgCO2e) matching the applied department and date filters.
+    """
+    q_carbon = db.query(CarbonTransaction)
+    if department_id:
+        q_carbon = q_carbon.filter(CarbonTransaction.department_id == department_id)
+    if date_from:
+        q_carbon = q_carbon.filter(CarbonTransaction.date >= date_from)
+    if date_to:
+        q_carbon = q_carbon.filter(CarbonTransaction.date <= date_to)
+    
+    total_emissions = sum(t.calculated_emissions for t in q_carbon.all())
+
+    """
+    Section 2: Social Data
+    Fetches employee CSR participations. It isolates only the 'Approved' 
+    participations to calculate the total valid CSR points awarded to employees.
+    """
+    q_participation = db.query(EmployeeParticipation)
+    if employee_id:
+        q_participation = q_participation.filter(EmployeeParticipation.employee_id == employee_id)
+    if date_from:
+        q_participation = q_participation.filter(EmployeeParticipation.completion_date >= date_from)
+    if date_to:
+        q_participation = q_participation.filter(EmployeeParticipation.completion_date <= date_to)
+    
+    participations = q_participation.all()
+    approved_social = [p for p in participations if p.approval_status == "Approved"]
+    social_points = sum(p.points_earned for p in approved_social)
+
+    """
+    Section 3: Governance Data
+    Fetches compliance issues assigned to employees. It calculates the raw count 
+    of total issues, unresolved open issues, and critically overdue issues.
+    """
+    q_issues = db.query(ComplianceIssue)
+    if employee_id:
+        q_issues = q_issues.filter(ComplianceIssue.owner_id == employee_id)
+    if date_from:
+        q_issues = q_issues.filter(ComplianceIssue.due_date >= date_from)
+    if date_to:
+        q_issues = q_issues.filter(ComplianceIssue.due_date <= date_to)
+    
+    issues = q_issues.all()
+    open_issues = len([i for i in issues if i.status == "Open"])
+    overdue_issues = len([i for i in issues if i.status == "Overdue"])
+
+    """
+    Section 4: Department Scores and Overall Aggregate
+    Retrieves the pre-calculated department scores. If a specific department 
+    is requested, it averages only that department's scores. Otherwise, it 
+    averages the total score across the entire organization.
+    """
+    q_scores = db.query(DepartmentScore)
+    if department_id:
+        q_scores = q_scores.filter(DepartmentScore.department_id == department_id)
+    scores = q_scores.all()
+    
+    overall_score = 0.0
+    if scores:
+        overall_score = round(sum(s.total_score for s in scores) / len(scores), 2)
+
+    """
+    Section 5: Native CSV Export Logic
+    If requested, formats the aggregated metrics into standard comma-separated 
+    values. We use StringIO as an in-memory buffer to construct the file 
+    before returning it as a downloadable attachment via FastAPI Response.
+    """
+    if export_format.lower() == "csv":
+        csv_file = StringIO()
+        writer = csv.writer(csv_file)
+        
+        writer.writerow(["Metric", "Value"])
+        writer.writerow(["Overall ESG Score", overall_score])
+        writer.writerow(["Total Emissions (kgCO2e)", round(total_emissions, 4)])
+        writer.writerow(["Approved CSR Activities", len(approved_social)])
+        writer.writerow(["Total CSR Points Awarded", social_points])
+        writer.writerow(["Total Compliance Issues", len(issues)])
+        writer.writerow(["Open Compliance Issues", open_issues])
+        writer.writerow(["Overdue Compliance Issues", overdue_issues])
+        
+        return Response(
+            content=csv_file.getvalue(),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=esg_summary_report.csv"}
+        )
+
+    """
+    Section 6: Default JSON Response
+    Constructs a structured JSON payload detailing the requested report metadata 
+    and the calculated metrics for each individual ESG domain.
+    """
+    return {
+        "report_metadata": {
+            "department_id": department_id,
+            "employee_id": employee_id,
+            "date_from": date_from,
+            "date_to": date_to
+        },
+        "overall_esg_score": overall_score,
+        "environmental_summary": {
+            "total_calculated_emissions_kgCO2e": round(total_emissions, 4)
+        },
+        "social_summary": {
+            "total_approved_csr_activities": len(approved_social),
+            "total_csr_points_awarded": social_points
+        },
+        "governance_summary": {
+            "total_compliance_issues": len(issues),
+            "open_issues": open_issues,
+            "overdue_issues": overdue_issues
+        }
+    }

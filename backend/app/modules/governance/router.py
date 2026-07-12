@@ -328,3 +328,71 @@ def governance_report(
             for i in issues
         ],
     }
+
+#---The Governance Report:V---
+
+@router.get("/report")
+def governance_report(
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    employee_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Generates a localized report for the Governance module.
+    
+    This endpoint pulls compliance issues, audits, and policy acknowledgements,
+    allowing the user to filter the data by a specific date range or a specific employee.
+    
+    Returns a dictionary containing the total audits conducted, a breakdown of 
+    compliance issues by their current status (open, resolved, overdue), and 
+    a count of policy acknowledgements that are still pending signatures.
+    """
+    
+    """
+    Fetch and filter Compliance Issues based on the provided query parameters.
+    We iterate over the results to count how many issues fall into specific severity statuses.
+    """
+    q_issues = db.query(ComplianceIssue)
+    if employee_id:
+        q_issues = q_issues.filter(ComplianceIssue.owner_id == employee_id)
+    if date_from:
+        q_issues = q_issues.filter(ComplianceIssue.due_date >= date_from)
+    if date_to:
+        q_issues = q_issues.filter(ComplianceIssue.due_date <= date_to)
+    
+    issues = q_issues.all()
+    open_issues = len([i for i in issues if i.status == "Open"])
+    resolved_issues = len([i for i in issues if i.status == "Resolved"])
+    overdue_issues = len([i for i in issues if i.status == "Overdue"])
+
+    """
+    Fetch and filter Audits conducted within the specified date range.
+    """
+    q_audits = db.query(Audit)
+    if date_from:
+        q_audits = q_audits.filter(Audit.date >= date_from)
+    if date_to:
+        q_audits = q_audits.filter(Audit.date <= date_to)
+    audits = q_audits.all()
+
+    """
+    Fetch Policy Acknowledgements to find how many documents are still pending a signature
+    from the requested employee (or all employees if no ID is provided).
+    """
+    q_acks = db.query(PolicyAcknowledgement)
+    if employee_id:
+        q_acks = q_acks.filter(PolicyAcknowledgement.employee_id == employee_id)
+    acks = q_acks.all()
+    pending_acks = len([a for a in acks if a.status == "Pending"])
+
+    return {
+        "audits_conducted": len(audits),
+        "compliance_issues": {
+            "total": len(issues),
+            "open": open_issues,
+            "resolved": resolved_issues,
+            "overdue": overdue_issues
+        },
+        "pending_policy_acknowledgements": pending_acks
+    }
