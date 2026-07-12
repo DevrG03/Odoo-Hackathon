@@ -84,18 +84,73 @@ uvicorn app.main:app --reload
 * **API Health Check:** [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 * **Interactive API Docs (Swagger):** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
+---
+
+## 🖥️ Running the Frontend
+
+The frontend is built using React + TypeScript + Tailwind CSS and uses Recharts for interactive ESG visualizations.
+
+### 1. Setup & Installation
+Navigate to the `frontend` directory and install the Node modules:
+```bash
+cd frontend
+npm install
+```
+
+### 2. Run local development server
+Start the Vite dev server:
+```bash
+npm run dev
+```
+By default, the frontend will be served at **`http://localhost:5173/`**.
+
+### 3. Production Build
+To generate a production-ready compiled bundle in the `dist` folder:
+```bash
+npm run build
+```
+
+---
+
+## 🔑 Demo Credentials
+
+Once the database has been seeded (`python seed.py` in the `backend/` directory), you can log in with the following demo credentials:
+
+* **Password (for all users):** `EcoSphere@2024`
+
+| Role | Email | Notes |
+| :--- | :--- | :--- |
+| **Admin** | `arjun.mehta@ecosphere.io` | Dept head: Engineering |
+| **Admin** | `priya.sharma@ecosphere.io` | Dept head: HR |
+| **Employee** | `rohan.desai@ecosphere.io` | 3 approved challenges |
+| **Employee** | `neha.kulkarni@ecosphere.io` | Top XP: 2100 |
+| **Employee** | `rahul.joshi@ecosphere.io` | Top points: 1300 |
+
+---
+
 ## 📂 Project Structure
 
 ```text
-backend/
-├── app/
-│   ├── main.py              # FastAPI app instance
-│   ├── config.py            # Settings and Environment Variables
-│   ├── database.py          # SQLAlchemy Engine and Session mapping
-│   ├── models/              # SQLAlchemy ORM Models (Split by domain)
-│   └── modules/             # Your API Routes and Business Logic go here
-├── alembic/                 # Database migration scripts
-├── alembic.ini              # Alembic configuration
-├── .env                     # Local environment variables
+Odoo-Hackathon/
+├── backend/                 # FastAPI backend application
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── models/
+│   │   └── modules/
+│   ├── seed.py              # Database seeding script
+│   ├── alembic/
+│   ├── alembic.ini
+│   └── .env
+├── frontend/                # React + Vite frontend application
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── types/
+│   │   └── App.tsx
+│   ├── tailwind.config.ts
+│   └── package.json
 └── README.md
 ```
