@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime
 from app.database import get_db
 from app.models.governance import ESGPolicy, PolicyAcknowledgement, Audit, ComplianceIssue
+from app.models.notification import Notification
 from app.schemas.governance import (
     ESGPolicyCreate, ESGPolicyRead,
     PolicyAcknowledgementCreate, PolicyAcknowledgementRead,
@@ -104,6 +105,19 @@ def create_acknowledgement(ack_in: PolicyAcknowledgementCreate, db: Session = De
         acknowledged_date=None,
     )
     db.add(ack)
+
+    # Fetch the policy title so the notification is descriptive
+    policy = db.query(ESGPolicy).filter(ESGPolicy.id == ack_in.policy_id).first()
+    policy_title = policy.title if policy else "a new corporate policy"
+
+    # Notification Logic: Initial reminder for the employee to sign the document
+    notif = Notification(
+        employee_id=ack_in.employee_id,
+        title="Action Required: Policy Acknowledgement",
+        message=f"Please review and acknowledge: {policy_title}."
+    )
+    db.add(notif)
+
     db.commit()
     db.refresh(ack)
     return ack
@@ -215,6 +229,15 @@ def create_compliance_issue(issue_in: ComplianceIssueCreate, db: Session = Depen
     # Business Rule: owner_id and due_date are mandatory (enforced by schema)
     issue = ComplianceIssue(**issue_in.model_dump(), status="Open")
     db.add(issue)
+
+    # Notification Logic: Alert the assigned owner with severity and due date
+    notif = Notification(
+        employee_id=issue.owner_id,
+        title="New Compliance Issue Assigned",
+        message=f"You have been assigned a {issue.severity} severity issue. Due Date: {issue.due_date.strftime('%Y-%m-%d')}"
+    )
+    db.add(notif)
+
     db.commit()
     db.refresh(issue)
     return issue

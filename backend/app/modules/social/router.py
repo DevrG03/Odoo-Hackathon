@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.social import CSRActivity, EmployeeParticipation
 from app.models.user import Employee
 from app.models.platform import ESGConfig
+from app.models.notification import Notification
 from app.schemas.social import (
     CSRActivityCreate, CSRActivityRead,
     EmployeeParticipationCreate, EmployeeParticipationApprove, EmployeeParticipationRead,
@@ -152,6 +153,14 @@ def approve_participation(
             employee = db.query(Employee).filter(Employee.id == p.employee_id).first()
             if employee:
                 employee.total_points += activity.points_offered
+
+    # Notification Logic: Inform the employee of the decision
+    notif = Notification(
+        employee_id=p.employee_id,
+        title=f"CSR Participation {approval_in.approval_status}",
+        message=f"Your CSR participation request has been {approval_in.approval_status.lower()}."
+    )
+    db.add(notif)
 
     db.commit()
     db.refresh(p)
