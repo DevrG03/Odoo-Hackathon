@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, ForeignKey, Enum, Float
+from sqlalchemy import String, Integer, ForeignKey, Enum, Float, Boolean
 import enum
 from app.database import Base
 
@@ -57,3 +57,17 @@ class DepartmentScore(Base):
     
     # The weighted average (40% Env, 30% Soc, 30% Gov)
     total_score: Mapped[float] = mapped_column(Float, default=0.0)
+
+class ESGConfig(Base):
+    """
+    Settings & Administration: Global toggles for platform business rules.
+    Typically, this table only has one row (id=1) representing the global state.
+    """
+    __tablename__ = "esg_configs"
+    
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    
+    # Core Business Rules (Section 8 of PDF)
+    auto_emission_calculation_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    evidence_requirement_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    badge_auto_award_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
