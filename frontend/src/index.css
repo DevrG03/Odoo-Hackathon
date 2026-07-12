@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dew text-charcoal font-sans text-[13px] antialiased;
+  }
+  * { @apply box-border; }
+}
+
+@layer components {
+  .card {
+    @apply bg-white border border-mist rounded-lg p-4;
+  }
+  .section-label {
+    @apply text-[10px] font-semibold uppercase tracking-[0.8px] text-sage mb-3 mt-6 pb-2 border-b border-mist first:mt-0;
+  }
+  .page-title {
+    @apply text-[20px] font-semibold text-charcoal tracking-tight mb-6;
+  }
+  .input {
+    @apply w-full px-3 py-[7px] border border-mist rounded-md text-[12.5px] text-charcoal bg-white
+           focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/15 transition-colors;
+  }
+  .input-label {
+    @apply block text-[11px] font-semibold text-charcoal mb-1;
+  }
+}
