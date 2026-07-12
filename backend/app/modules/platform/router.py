@@ -9,6 +9,9 @@ from app.schemas.platform import (
     ESGConfigRead, ESGConfigUpdate,
     DepartmentScoreRead
 )
+from app.models.environmental import CarbonTransaction
+from app.models.social import EmployeeParticipation
+from app.models.governance import ComplianceIssue
 from app.models.notification import Notification
 from app.schemas.notification import NotificationRead
 from datetime import datetime
