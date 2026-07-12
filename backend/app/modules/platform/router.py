@@ -9,6 +9,8 @@ from app.schemas.platform import (
     ESGConfigRead, ESGConfigUpdate,
     DepartmentScoreRead,
 )
+from app.models.notification import Notification
+from app.schemas.notification import NotificationRead
 
 router = APIRouter()
 
@@ -192,3 +194,29 @@ def overall_dashboard(db: Session = Depends(get_db)):
             for s in scores
         ],
     }
+
+
+# --- Notifications ---
+
+@router.get("/notifications/{employee_id}", response_model=list[NotificationRead])
+def get_employee_notifications(employee_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieves all notifications for a specific employee.
+    Results are ordered by created_at descending so the newest notifications appear first.
+    """
+    return db.query(Notification).filter(
+        Notification.employee_id == employee_id
+    ).order_by(Notification.created_at.desc()).all()
+
+@router.put("/notifications/{notification_id}/read")
+def mark_notification_read(notification_id: int, db: Session = Depends(get_db)):
+    """
+    Updates the is_read flag to True. 
+    This should be called by the frontend when a user clicks on a notification 
+    or opens the notification center.
+    """
+    notif = db.query(Notification).filter(Notification.id == notification_id).first()
+    if notif:
+        notif.is_read = True
+        db.commit()
+    return {"status": "success"}
