@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Layout } from '../../components/layout/Layout'
 import { StatCard } from '../../components/ui/StatCard'
 import { Table, type Column } from '../../components/ui/Table'
@@ -19,12 +20,17 @@ export function DashboardPage() {
     queryFn: () => platformApi.listScores(),
   })
 
+  const { data: departments = [], isLoading: isDepsLoading } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => platformApi.listDepartments(),
+  })
+
   const { data: leaderboard = [], isLoading: isLeaderboardLoading } = useQuery({
     queryKey: ['leaderboard', 5],
     queryFn: () => gamificationApi.getLeaderboard(5),
   })
 
-  const isLoading = isDashboardLoading || isScoresLoading || isLeaderboardLoading
+  const isLoading = isDashboardLoading || isScoresLoading || isDepsLoading || isLeaderboardLoading
 
   if (isLoading) {
     return (
@@ -37,6 +43,16 @@ export function DashboardPage() {
   const overallEsgScore = dashboard?.overall_esg_score ?? 0
   const totalDepartments = scores.length
   const topXP = leaderboard[0]?.total_xp ?? 0
+
+  const chartData = scores.map((s) => {
+    const dept = departments.find((d) => d.id === s.department_id)
+    return {
+      name: dept ? dept.name : `Dept ${s.department_id}`,
+      Environmental: s.environmental_score,
+      Social: s.social_score,
+      Governance: s.governance_score,
+    }
+  })
 
   const scoreColumns: Column<DepartmentScore>[] = [
     { header: 'Department ID', accessor: 'department_id', numeric: true },
@@ -101,6 +117,42 @@ export function DashboardPage() {
           stripe="red"
           icon="ti-hourglass-low"
         />
+      </div>
+
+      {/* ESG Performance Chart */}
+      <div className="card mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[14px] font-semibold text-charcoal">ESG Performance by Department</h2>
+        </div>
+        <div className="h-[280px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6F2DD" />
+              <XAxis
+                dataKey="name"
+                interval={0}
+                tick={{ fill: '#2D3A35', fontSize: 10 }}
+                height={55}
+                angle={-15}
+                textAnchor="end"
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis domain={[0, 100]} tick={{ fill: '#2D3A35', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#2D3A35', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '12px' }}
+                itemStyle={{ color: '#fff' }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
+              <Bar name="Environmental" dataKey="Environmental" fill="#659287" radius={[4, 4, 0, 0]} />
+              <Bar name="Social" dataKey="Social" fill="#88BDA4" radius={[4, 4, 0, 0]} />
+              <Bar name="Governance" dataKey="Governance" fill="#B1D3B9" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
