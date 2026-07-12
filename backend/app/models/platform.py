@@ -19,7 +19,7 @@ class Department(Base):
     code: Mapped[str] = mapped_column(String, unique=True)
     
     # Links to the Employee model to define who leads the department
-    head_id: Mapped[int] = mapped_column(ForeignKey("employees.id"), nullable=True)
+    head_id: Mapped[int] = mapped_column(ForeignKey("employees.id", use_alter=True, name="fk_department_head_id"), nullable=True)
     
     # Self-referential key to allow for nested sub-departments
     parent_department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), nullable=True)
@@ -28,7 +28,7 @@ class Department(Base):
     status: Mapped[str] = mapped_column(String, default="active")
 
     # Establishes the link so you can query department.employees
-    employees = relationship("Employee", back_populates="department", foreign_keys="[Employee.department_id]")
+    employees = relationship("Employee", back_populates="department", foreign_keys="[Employee.department_id]", post_update=True)
 
 class Category(Base):
     """
