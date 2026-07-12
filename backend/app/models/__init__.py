@@ -8,3 +8,4 @@ from .environmental import EmissionFactor, ProductESGProfile, EnvironmentalGoal,
 from .social import CSRActivity, EmployeeParticipation
 from .gamification import Challenge, ChallengeParticipation, Badge, Reward
 from .governance import ESGPolicy, PolicyAcknowledgement, Audit, ComplianceIssue
+from .notification import Notification
