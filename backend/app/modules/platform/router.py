@@ -7,25 +7,17 @@ from app.schemas.platform import (
     DepartmentCreate, DepartmentRead,
     CategoryCreate, CategoryRead,
     ESGConfigRead, ESGConfigUpdate,
-    DepartmentScoreRead,
+    DepartmentScoreRead
 )
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
+from app.models.environmental import CarbonTransaction
+from app.models.social import EmployeeParticipation
+from app.models.governance import ComplianceIssue
 from app.models.notification import Notification
 from app.schemas.notification import NotificationRead
->>>>>>> 496be0324a111f1499a11f0c6b27353d7dee82cb
 from datetime import datetime
 import csv
 from io import StringIO
 from fastapi import Response
-<<<<<<< HEAD
-=======
-from app.models.notification import Notification
-from app.schemas.notification import NotificationRead
->>>>>>> Het
-=======
->>>>>>> 496be0324a111f1499a11f0c6b27353d7dee82cb
 
 router = APIRouter()
 
@@ -210,9 +202,6 @@ def overall_dashboard(db: Session = Depends(get_db)):
         ],
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 
 # --- Notifications ---
 
@@ -238,7 +227,6 @@ def mark_notification_read(notification_id: int, db: Session = Depends(get_db)):
         notif.is_read = True
         db.commit()
     return {"status": "success"}
->>>>>>> 496be0324a111f1499a11f0c6b27353d7dee82cb
 # ---The ESG Summary Report (Custom Report Builder)---
 
 @router.get("/reports/esg-summary")
@@ -376,33 +364,3 @@ def esg_summary_report(
             "overdue_issues": overdue_issues
         }
     }
-<<<<<<< HEAD
-=======
-
-# --- Notifications ---
-
-@router.get("/notifications/{employee_id}", response_model=list[NotificationRead])
-def get_employee_notifications(employee_id: int, db: Session = Depends(get_db)):
-    """
-    Retrieves all notifications for a specific employee.
-    Results are ordered by created_at descending so the newest notifications appear first.
-    """
-    return db.query(Notification).filter(
-        Notification.employee_id == employee_id
-    ).order_by(Notification.created_at.desc()).all()
-
-@router.put("/notifications/{notification_id}/read")
-def mark_notification_read(notification_id: int, db: Session = Depends(get_db)):
-    """
-    Updates the is_read flag to True. 
-    This should be called by the frontend when a user clicks on a notification 
-    or opens the notification center.
-    """
-    notif = db.query(Notification).filter(Notification.id == notification_id).first()
-    if notif:
-        notif.is_read = True
-        db.commit()
-    return {"status": "success"}
->>>>>>> Het
-=======
->>>>>>> 496be0324a111f1499a11f0c6b27353d7dee82cb
