@@ -1,5 +1,4 @@
 .venv
 .env
 __pycache__
-.vscode
-3_person.md
+.vscode.DS_Store
